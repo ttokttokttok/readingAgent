@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Companion</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background-color: #f5f0eb;
+      color: #3a3228;
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* ── Top header bar ── */
+    .app-header {
+      background-color: #f5f0eb;
+      border-bottom: 1px solid #e0d8d0;
+      padding: 1.5rem 2.5rem 1rem;
+    }
+
+    .app-header h1 {
+      font-size: 1.5rem;
+      font-weight: normal;
+      color: #5c4a3a;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.2rem;
+    }
+
+    .app-header .subtitle {
+      font-size: 0.9rem;
+      color: #8a7060;
+      margin: 0;
+    }
+
+    .container {
+      width: 100%;
+      padding: 1.5rem 2.5rem 2.5rem;
+    }
+
+    h1 { display: none; }
+    .container > .subtitle { display: none; }
+
+    /* ── Grid layout ── */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 600px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .container { padding: 1rem; }
+    }
+
+    /* ── Card ── */
+    .card {
+      background-color: #fff;
+      border: 1px solid #e0d8d0;
+      border-radius: 0.75rem;
+      padding: 1.75rem;
+      text-align: left;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .card h2 {
+      font-size: 0.75rem;
+      font-weight: normal;
+      color: #8a7060;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #ede8e2;
+    }
+
+    /* ── Countdown display ── */
+    .countdown {
+      font-size: 4rem;
+      font-weight: normal;
+      letter-spacing: 0.04em;
+      color: #5c4a3a;
+      text-align: center;
+      margin: 1.25rem 0;
+      line-height: 1;
+    }
+
+    /* ── Preset buttons ── */
+    .preset-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .preset-buttons button {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      background-color: #f5f0eb;
+      color: #5c4a3a;
+      border: 1px solid #c8bdb0;
+      border-radius: 1.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .preset-buttons button:hover,
+    .preset-buttons button.active {
+      background-color: #7a9e7e;
+      color: #fff;
+      border-color: #7a9e7e;
+    }
+
+    /* ── Custom duration ── */
+    .custom-duration {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .custom-duration input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: 1px solid #c8bdb0;
+      border-radius: 0.4rem;
+      background-color: #faf8f5;
+      color: #3a3228;
+    }
+
+    .custom-duration input:focus {
+      outline: none;
+      border-color: #7a9e7e;
+    }
+
+    /* ── Timer controls ── */
+    .timer-controls {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+
+    .timer-controls button {
+      flex: 1;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: none;
+      border-radius: 1.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    #timer-start {
+      background-color: #7a9e7e;
+      color: #fff;
+    }
+
+    #timer-start:hover:not(:disabled) {
+      background-color: #6a8e6e;
+    }
+
+    #timer-pause {
+      background-color: #b09060;
+      color: #fff;
+    }
+
+    #timer-pause:hover:not(:disabled) {
+      background-color: #9a7a50;
+    }
+
+    #timer-reset {
+      background-color: transparent;
+      color: #7a9e7e;
+      border: 1.5px solid #7a9e7e;
+    }
+
+    #timer-reset:hover:not(:disabled) {
+      background-color: #7a9e7e;
+      color: #fff;
+    }
+
+    .timer-controls button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── End banner ── */
+    .end-banner {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background-color: #eaf4eb;
+      border: 1px solid #a8d0ac;
+      border-radius: 0.5rem;
+      color: #3a6e3e;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    /* ── Inline error ── */
+    .inline-error {
+      font-size: 0.8rem;
+      color: #b05c5c;
+    }
+
+    /* ── Music section ── */
+    .search-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .search-row-inputs {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .search-row-inputs input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: 1px solid #c8bdb0;
+      border-radius: 0.4rem;
+      background-color: #faf8f5;
+      color: #3a3228;
+    }
+
+    .search-row-inputs input:focus {
+      outline: none;
+      border-color: #7a9e7e;
+    }
+
+    .search-row-inputs button {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background-color: #7a9e7e;
+      color: #fff;
+      border: none;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .search-row-inputs button:hover {
+      background-color: #6a8e6e;
+    }
+
+    #yt-player-container {
+      margin-bottom: 0.75rem;
+    }
+
+    #yt-player {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: #1a1a1a;
+      border-radius: 0.4rem;
+      overflow: hidden;
+    }
+
+    #yt-error {
+      margin-top: 0.5rem;
+    }
+
+    /* ── Music controls ── */
+    .music-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    #volume-slider {
+      flex: 1;
+      min-width: 60px;
+      accent-color: #7a9e7e;
+    }
+
+    #mute-btn,
+    #stop-btn {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      border: 1.5px solid #c8bdb0;
+      border-radius: 1.5rem;
+      background-color: transparent;
+      color: #5c4a3a;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    #mute-btn:hover,
+    #stop-btn:hover {
+      background-color: #5c4a3a;
+      color: #fff;
+      border-color: #5c4a3a;
+    }
+
+    /* ── Voice Agent section ── */
+    #toggleBtn {
+      display: inline-block;
+      padding: 0.85rem 2.4rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background-color: #7a9e7e;
+      color: #fff;
+      border: none;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      letter-spacing: 0.04em;
+    }
+
+    #toggleBtn:hover {
+      background-color: #6a8e6e;
+    }
+
+    #toggleBtn:active {
+      transform: scale(0.97);
+    }
+
+    #toggleBtn.active {
+      background-color: #b05c5c;
+    }
+
+    #toggleBtn.active:hover {
+      background-color: #9a4c4c;
+    }
+
+    .status-area {
+      margin-top: 1.5rem;
+      min-height: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    #status {
+      font-size: 0.9rem;
+      color: #8a7060;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    #status.listening { color: #7a9e7e; }
+    #status.ready     { color: #7a9e7e; font-weight: bold; }
+    #status.speaking  { color: #5c7a9e; }
+    #status.connecting { color: #b09060; }
+    #status.error     { color: #b05c5c; text-transform: none; letter-spacing: 0; font-size: 0.85rem; }
+    #status.disconnected { color: #b05c5c; }
+
+    #micDenied {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      background-color: #f9ece8;
+      border: 1px solid #e0b8b0;
+      border-radius: 0.5rem;
+      color: #8a4040;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    #reconnectBtn {
+      display: none;
+      padding: 0.6rem 1.6rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background-color: transparent;
+      color: #7a9e7e;
+      border: 1.5px solid #7a9e7e;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      letter-spacing: 0.03em;
+    }
+
+    #reconnectBtn:hover {
+      background-color: #7a9e7e;
+      color: #fff;
+    }
+
+    .pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    #definition-card {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1.25rem 1.25rem;
+      background-color: #faf8f5;
+      border: 1px solid #e0d8d0;
+      border-radius: 0.75rem;
+      text-align: left;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #definition-word {
+      font-size: 1.2rem;
+      font-weight: normal;
+      color: #5c4a3a;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.4rem;
+    }
+
+    #definition-pos {
+      font-size: 0.8rem;
+      color: #8a7060;
+      font-style: italic;
+      margin-bottom: 0.75rem;
+    }
+
+    #definition-text {
+      font-size: 0.9rem;
+      color: #3a3228;
+      line-height: 1.6;
+    }
+
+    #definition-extra {
+      margin-top: 0.75rem;
+      font-size: 0.82rem;
+      color: #7a6858;
+      line-height: 1.5;
+      border-top: 1px solid #ede8e2;
+      padding-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Reading Companion</h1>
+    <p class="subtitle">Set a timer, play ambient music, and look up words — all in one place.</p>
+  </header>
+  <div class="container">
+    <div class="app-grid">
+
+      <!-- ── Timer Section ── -->
+      <section class="card" id="timer-section" style="display:none;">
+        <h2>Reading Timer</h2>
+
+        <div class="preset-buttons">
+          <button data-minutes="25">25 min</button>
+          <button data-minutes="45">45 min</button>
+          <button data-minutes="60">60 min</button>
+        </div>
+
+        <div class="custom-duration">
+          <input id="custom-minutes" type="number" min="1" max="180" placeholder="Custom (1–180 min)" />
+          <span id="custom-error" class="inline-error" hidden></span>
+        </div>
+
+        <div id="timer-display" class="countdown">25:00</div>
+
+        <div class="timer-controls">
+          <button id="timer-start">Start</button>
+          <button id="timer-pause" disabled>Pause</button>
+          <button id="timer-reset" disabled>Reset</button>
+        </div>
+
+        <div id="timer-end-banner" class="end-banner" hidden>
+          Session complete!
+        </div>
+      </section>
+
+      <!-- ── Music Section ── -->
+      <section class="card" id="music-section" style="display:none;">
+        <h2>Ambient Music</h2>
+
+        <div class="search-row">
+          <div class="search-row-inputs">
+            <input id="music-search" type="text" placeholder="Search YouTube (e.g. lofi hip hop)" />
+            <button id="music-search-btn">Search</button>
+          </div>
+          <span id="search-error" class="inline-error" hidden></span>
+        </div>
+
+        <div id="yt-player-container" style="display:none;">
+          <div id="yt-player"></div>
+          <div id="yt-error" class="inline-error" hidden></div>
+        </div>
+
+        <div class="music-controls" id="music-controls" style="display:none;">
+          <input id="volume-slider" type="range" min="0" max="100" value="50" />
+          <button id="mute-btn">Mute</button>
+          <button id="stop-btn">Stop</button>
+        </div>
+      </section>
+
+      <!-- ── Voice Agent Section ── -->
+      <section class="card" id="agent-section">
+        <h2>Voice Agent</h2>
+        <p style="font-size:0.85rem;color:#8a7060;margin-bottom:1.25rem;">Speak a word. Hear its meaning.</p>
+
+        <div style="text-align: center;">
+          <button id="toggleBtn">Start</button>
+        </div>
+
+        <div class="status-area">
+          <span id="status">idle</span>
+          <button id="reconnectBtn">Reconnect</button>
+        </div>
+
+        <div id="micDenied">
+          Microphone access is required to use the Voice Definition Agent.
+          Please allow microphone access in your browser settings and try again.
+        </div>
+
+        <div id="definition-card">
+          <div id="definition-word"></div>
+          <div id="definition-pos"></div>
+          <div id="definition-text"></div>
+          <div id="definition-extra"></div>
+        </div>
+      </section>
+
+    </div><!-- /.app-grid -->
+  </div><!-- /.container -->
+
+  <script src="client.js"></script>
+</body>
+</html>

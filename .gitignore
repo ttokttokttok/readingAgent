@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment variables (never commit secrets)
+.env
+
+# Built browser bundle (regenerated via npm run build)
+public/client.js
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# NOTE: .kiro/ is intentionally NOT ignored — required for hackathon submission
