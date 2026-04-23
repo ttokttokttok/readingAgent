@@ -21,33 +21,12 @@
       margin: 0;
     }
 
-    /* ── Top header bar ── */
-    .app-header {
-      background-color: #f5f0eb;
-      border-bottom: 1px solid #e0d8d0;
-      padding: 1.5rem 2.5rem 1rem;
-    }
-
-    .app-header h1 {
-      font-size: 1.5rem;
-      font-weight: normal;
-      color: #5c4a3a;
-      letter-spacing: 0.02em;
-      margin-bottom: 0.2rem;
-    }
-
-    .app-header .subtitle {
-      font-size: 0.9rem;
-      color: #8a7060;
-      margin: 0;
-    }
-
     .container {
       width: 100%;
-      padding: 1.5rem 2.5rem 2.5rem;
+      padding: 0 2.5rem 2.5rem;
     }
 
-    h1 { display: none; }
+    h1 { display: block; }
     .container > .subtitle { display: none; }
 
     /* ── Grid layout ── */
@@ -314,11 +293,66 @@
       border-color: #5c4a3a;
     }
 
-    /* ── Voice Agent section ── */
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem 2.5rem;
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      font-weight: normal;
+      color: #5c4a3a;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .hero .tagline {
+      font-size: 1.1rem;
+      color: #8a7060;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+
+    .hero-hints {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .hint-chip {
+      background-color: #fff;
+      border: 1px solid #e0d8d0;
+      border-radius: 2rem;
+      padding: 0.4rem 1rem;
+      font-size: 0.82rem;
+      color: #7a6858;
+      font-style: italic;
+    }
+
+    /* ── Agent card centered on initial load ── */
+    #agent-section {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .agent-start-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0 0.5rem;
+      gap: 1.25rem;
+    }
+
     #toggleBtn {
-      display: inline-block;
-      padding: 0.85rem 2.4rem;
-      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 3rem;
+      font-size: 1.1rem;
       font-family: inherit;
       background-color: #7a9e7e;
       color: #fff;
@@ -327,23 +361,13 @@
       cursor: pointer;
       transition: background-color 0.2s ease, transform 0.1s ease;
       letter-spacing: 0.04em;
+      box-shadow: 0 4px 14px rgba(122,158,126,0.35);
     }
 
-    #toggleBtn:hover {
-      background-color: #6a8e6e;
-    }
-
-    #toggleBtn:active {
-      transform: scale(0.97);
-    }
-
-    #toggleBtn.active {
-      background-color: #b05c5c;
-    }
-
-    #toggleBtn.active:hover {
-      background-color: #9a4c4c;
-    }
+    #toggleBtn:hover { background-color: #6a8e6e; }
+    #toggleBtn:active { transform: scale(0.97); }
+    #toggleBtn.active { background-color: #b05c5c; box-shadow: 0 4px 14px rgba(176,92,92,0.35); }
+    #toggleBtn.active:hover { background-color: #9a4c4c; }
 
     .status-area {
       margin-top: 1.5rem;
@@ -355,12 +379,13 @@
     }
 
     #status {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #8a7060;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
+    #status.idle::before { content: "🎙 "; }
     #status.listening { color: #7a9e7e; }
     #status.ready     { color: #7a9e7e; font-weight: bold; }
     #status.speaking  { color: #5c7a9e; }
@@ -463,10 +488,10 @@
   </style>
 </head>
 <body>
-  <header class="app-header">
+  <div class="hero">
     <h1>Reading Companion</h1>
-    <p class="subtitle">Set a timer, play ambient music, and look up words — all in one place.</p>
-  </header>
+    <p class="tagline">Your hands-free reading assistant.<br>Define words, set timers, and play music — all by voice.</p>
+  </div>
   <div class="container">
     <div class="app-grid">
 
@@ -525,14 +550,10 @@
       <!-- ── Voice Agent Section ── -->
       <section class="card" id="agent-section">
         <h2>Voice Agent</h2>
-        <p style="font-size:0.85rem;color:#8a7060;margin-bottom:1.25rem;">Speak a word. Hear its meaning.</p>
 
-        <div style="text-align: center;">
-          <button id="toggleBtn">Start</button>
-        </div>
-
-        <div class="status-area">
-          <span id="status">idle</span>
+        <div class="agent-start-area">
+          <button id="toggleBtn">🎙 Start Listening</button>
+          <span id="status">ready when you are</span>
           <button id="reconnectBtn">Reconnect</button>
         </div>
 
@@ -546,6 +567,12 @@
           <div id="definition-pos"></div>
           <div id="definition-text"></div>
           <div id="definition-extra"></div>
+        </div>
+
+        <div class="hero-hints">
+          <span class="hint-chip">"What does ephemeral mean?"</span>
+          <span class="hint-chip">"Set a timer for 25 minutes"</span>
+          <span class="hint-chip">"Play lofi hip hop"</span>
         </div>
       </section>
 
