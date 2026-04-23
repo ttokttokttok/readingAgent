@@ -213,15 +213,63 @@ const musicState = {
   apiError: false,
 };
 
-/* Task 6.1 — YouTube IFrame API init */
+/* Helper: (re)initialize YT.Player on #yt-player */
+function _initPlayer() {
+  if (musicState.ytPlayer && typeof musicState.ytPlayer.destroy === "function") {
+    musicState.ytPlayer.destroy();
+  }
+  musicState.ytPlayer = new YT.Player("yt-player", {
+    height: "100%",
+    width: "100%",
+    playerVars: { autoplay: 0, controls: 1 },
+    events: {
+      onReady: () => {
+        musicState.apiReady = true;
+        musicState.ytPlayer.setVolume(musicState.currentVolume);
+      },
+      onError: () => {
+        const ytError = document.getElementById("yt-error");
+        if (ytError) { ytError.textContent = "Video unavailable. Try another."; ytError.removeAttribute("hidden"); }
+      },
+    },
+  });
+}
+
+/* Helper: load a video by ID, optionally autoplay */
+function _loadVideo(videoId, autoplay = false) {
+  if (!musicState.ytPlayer || !musicState.apiReady) {
+    // Player not ready yet — wait and retry
+    setTimeout(() => _loadVideo(videoId, autoplay), 300);
+    return;
+  }
+  const playerDiv = document.getElementById("yt-player");
+  if (playerDiv) playerDiv.style.display = "block";
+  if (autoplay) {
+    musicState.ytPlayer.loadVideoById(videoId);
+  } else {
+    musicState.ytPlayer.cueVideoById(videoId);
+  }
+  musicState.ytPlayer.setVolume(musicState.currentVolume);
+}
+
+
 window.onYouTubeIframeAPIReady = function () {
   try {
     musicState.ytPlayer = new YT.Player("yt-player", {
       height: "100%",
       width: "100%",
-      playerVars: { autoplay: 0 },
+      playerVars: { autoplay: 0, controls: 1 },
+      events: {
+        onReady: () => {
+          musicState.apiReady = true;
+          musicState.ytPlayer.setVolume(musicState.currentVolume);
+        },
+        onError: () => {
+          const ytError = document.getElementById("yt-error");
+          if (ytError) { ytError.textContent = "Video unavailable. Try another."; ytError.removeAttribute("hidden"); }
+        },
+      },
     });
-    musicState.apiReady = true;
   } catch (err) {
     const ytError = document.getElementById("yt-error");
     if (ytError) ytError.removeAttribute("hidden");
@@ -242,47 +290,36 @@ export const MusicModule = {
     const container = document.getElementById("yt-player-container");
     if (!container) return;
 
-    // Show loading state
     const musicSection = document.getElementById("music-section");
     if (musicSection) musicSection.style.display = "block";
     container.style.display = "block";
-    container.innerHTML = `<div style="padding:1rem;color:#8a7060;font-size:0.9rem;">Searching...</div>`;
+
+    // Show loading
+    const loadingDiv = document.createElement("div");
+    loadingDiv.id = "yt-loading";
+    loadingDiv.style.cssText = "padding:1rem;color:#8a7060;font-size:0.9rem;";
+    loadingDiv.textContent = "Searching...";
 
     try {
       const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query.trim())}`);
       const data = await res.json();
 
-      if (!res.ok || !data.results) {
-        container.innerHTML = `<div style="padding:1rem;color:#b05c5c;font-size:0.85rem;">${data.error || "Search failed."}</div>`;
+      if (!res.ok || !data.results || data.results.length === 0) {
+        container.innerHTML = `<div style="padding:1rem;color:#b05c5c;font-size:0.85rem;">${data.error || "No results found."}</div><div id="yt-player" style="display:none;"></div>`;
         return;
       }
 
-      if (data.results.length === 0) {
-        container.innerHTML = `<div style="padding:1rem;color:#8a7060;font-size:0.85rem;">No results found.</div>`;
-        return;
-      }
-
-      // If voice-triggered, auto-play the first result
       if (autoplay) {
-        const videoId = data.results[0].videoId;
-        container.innerHTML = `
-          <div id="yt-player" style="width:100%;aspect-ratio:16/9;">
-            <iframe
-              src="https://www.youtube.com/embed/${videoId}?autoplay=1"
-              width="100%" height="100%"
-              style="border:0;border-radius:0.4rem;"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-            ></iframe>
-          </div>`;
+        // Voice-triggered: load first result directly into YT Player
+        _loadVideo(data.results[0].videoId, true);
         const controls = document.getElementById("music-controls");
         if (controls) controls.style.display = "flex";
         return;
       }
 
-      // Manual search — show results list
-      container.innerHTML = `
-        <div id="yt-results" style="display:flex;flex-direction:column;gap:0.5rem;max-height:280px;overflow-y:auto;">
+      // Manual search: show results list, keep yt-player div intact
+      const resultsHtml = `
+        <div id="yt-results" style="display:flex;flex-direction:column;gap:0.5rem;max-height:260px;overflow-y:auto;margin-bottom:0.5rem;">
           ${data.results.map((v) => `
             <button class="yt-result-item" data-video-id="${v.videoId}" style="
               display:flex;align-items:center;gap:0.6rem;padding:0.5rem;
@@ -297,30 +334,27 @@ export const MusicModule = {
             </button>
           `).join("")}
         </div>
-        <div id="yt-player" style="display:none;width:100%;aspect-ratio:16/9;margin-top:0.5rem;"></div>
+        <div id="yt-player" style="width:100%;aspect-ratio:16/9;display:none;"></div>
+        <div id="yt-error" class="inline-error" hidden></div>
       `;
+      container.innerHTML = resultsHtml;
 
-      // Wire result clicks to embed the video
+      // Re-init YT player on the new #yt-player div
+      _initPlayer();
+
       container.querySelectorAll(".yt-result-item").forEach((btn) => {
         btn.addEventListener("click", () => {
           const videoId = btn.dataset.videoId;
           document.getElementById("yt-results").style.display = "none";
-          const playerDiv = document.getElementById("yt-player");
-          playerDiv.style.display = "block";
-          playerDiv.innerHTML = `<iframe
-            src="https://www.youtube.com/embed/${videoId}?autoplay=1"
-            width="100%" height="100%"
-            style="border:0;border-radius:0.4rem;"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>`;
+          document.getElementById("yt-player").style.display = "block";
+          _loadVideo(videoId, true);
           const controls = document.getElementById("music-controls");
           if (controls) controls.style.display = "flex";
         });
       });
 
     } catch (err) {
-      container.innerHTML = `<div style="padding:1rem;color:#b05c5c;font-size:0.85rem;">Search failed. Please try again.</div>`;
+      container.innerHTML = `<div style="padding:1rem;color:#b05c5c;font-size:0.85rem;">Search failed. Please try again.</div><div id="yt-player" style="display:none;"></div>`;
     }
   },
 
@@ -328,32 +362,27 @@ export const MusicModule = {
   setVolume(v) {
     const clamped = Math.max(0, Math.min(100, v));
     musicState.currentVolume = clamped;
-    if (!musicState.ytPlayer) return;
+    const slider = document.getElementById("volume-slider");
+    if (slider) slider.value = clamped;
+    if (!musicState.ytPlayer || !musicState.apiReady) return;
     if (!musicState.isDucked) {
       musicState.ytPlayer.setVolume(clamped);
     }
-    const slider = document.getElementById("volume-slider");
-    if (slider) slider.value = clamped;
   },
 
   /* ── Task 7.4 — toggleMute ── */
   toggleMute() {
-    if (!musicState.ytPlayer) return;
+    if (!musicState.ytPlayer || !musicState.apiReady) return;
     musicState.isMuted = !musicState.isMuted;
-    if (musicState.isMuted) {
-      musicState.ytPlayer.setVolume(0);
-    } else {
-      musicState.ytPlayer.setVolume(musicState.currentVolume);
-    }
+    musicState.ytPlayer.setVolume(musicState.isMuted ? 0 : musicState.currentVolume);
     const muteBtn = document.getElementById("mute-btn");
     if (muteBtn) muteBtn.textContent = musicState.isMuted ? "Unmute" : "Mute";
   },
 
   /* ── Task 7.4 — stop ── */
   stop() {
-    if (!musicState.ytPlayer) return;
-    musicState.ytPlayer.pauseVideo();
-    musicState.ytPlayer.seekTo(0, true);
+    if (!musicState.ytPlayer || !musicState.apiReady) return;
+    try { musicState.ytPlayer.stopVideo(); } catch (_) {}
   },
 
   /* ── Task 8.1 — duck ── */
