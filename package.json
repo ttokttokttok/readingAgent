@@ -5,9 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "build": "esbuild public/client.src.js --bundle --outfile=public/client.js --platform=browser --target=es2020",
+    "postinstall": "npm run build",
     "test": "jest --forceExit",
-    "create-agent": "node scripts/createAgent.js",
-    "build": "esbuild public/client.src.js --bundle --outfile=public/client.js --platform=browser --target=es2020"
+    "create-agent": "node scripts/createAgent.js"
   },
   "dependencies": {
     "@elevenlabs/client": "^1.0.0",
